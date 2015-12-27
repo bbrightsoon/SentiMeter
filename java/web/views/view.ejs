@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <!--bootstrap-->
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
+    <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+
+    <!--angular and jquery-->
+    <script src="bower_components/angular/angular.min.js"></script>
+
+    <!--spinkit-->
+    <link rel="stylesheet" href="bower_components/angular-spinkit/build/angular-spinkit.min.css">
+    <script src="bower_components/angular-spinkit/build/angular-spinkit.min.js"></script>
+
+    <!--&lt;!&ndash;chart(chart.js)&ndash;&gt;-->
+    <!--<script src="bower_components/Chart.js/Chart.min.js"></script>-->
+    <!--<script src="bower_components/angular-chart.js/dist/angular-chart.min.js"></script>-->
+    <!--<link rel="stylesheet" href="bower_components/angular-chart.js/dist/angular-chart.css"/>-->
+
+    <!--chart(nwagon)-->
+    <link rel="stylesheet" href="bower_components/Nwagon/Nwagon.css" type="text/css">
+    <script src="bower_components/Nwagon/Nwagon.js"></script>
+
+    <!--style-->
+    <link rel="stylesheet" href="stylesheets/style.css">
+
+
+</head>
+<body ng-cloak ng-app="sentimeter" ng-controller="view"
+      ng-class="{ 'afterScrool' : getSentimentBar && getWordCount && getChart}">
+<!--FFDC74-->
+
+<div id="header">
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="header-default">
+            <div class="input-group">
+                <a href="/home">
+                <img src="image/logo.png" class="headerLogo" height="30px" >
+                </a>
+                <input class="searchInput" type="text" class="form-control" placeholder="다른 키워드로 감성을 확인해보세요!"
+                       ng-model="input"
+                       ng-keydown="$event.keyCode == 13 && toggle()">
+                <div class="input-group-btn" style="width:50px; height:50px;">
+                    <button class="btn searchBtn" ng-click="toggle()" type="submit">
+                        <i style="color:#FFFFFF;" class="glyphicon glyphicon-search"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="vw-container-header-keyword">
+            <h5 style="color:#72848B; font-family: NanumBarunGothicBold;">많이 검색한 키워드:
+                <small ng-repeat="keyword in model.search" ng-show="getSearch">
+                    <a href="/view?keyword={{keyword._id}}"
+                       style="font-size:12px; padding-left:1em; color:#696969; font-family:NanumBarunGothic;">{{keyword._id}}</a>
+                </small>
+                <small style="font-size:12px; padding-left:1em; color:#C6C6C6; font-family:NanumBarunGothic;" ng-hide="getSearch">
+                    많이 검색한 키워드를 불러오는 중입니다</a>
+                </small>
+            </h5>
+        </div>
+    </nav>
+</div>
+<div id="container">
+    <div>
+        <div class="vw-container-hide"
+             ng-class="{ 'vw-container-hide-active' : getSentimentBar && getWordCount && getChart}">
+            <div class="outer">
+                <div class="inner">
+                    <div class="centered">
+                        <h3 style="color:#72848B; font-family: NanumBarunGothicBold;">감성분석을 하는 중 입니다</h3>
+                        <!--<fading-circle-spinner></fading-circle-spinner>-->
+                        <!--<pulse-spinner></pulse-spinner>-->
+                        <!--<chasing-dots-spinner></chasing-dots-spinner>-->
+                        <three-bounce-spinner></three-bounce-spinner>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="vw-container-hide" ng-show="getSentimentBar && getWordCount && getChart && erroralert">
+            <div class="outer">
+                <div class="inner">
+                    <div class="centered">
+                        <div class="">
+                            <h3 style="color:#72828B; font-family: NanumBarunGothicBold">"{{keyword}}"에 대한 글이 없습니다.</h3>
+                                <h2 style="color:#F5A54A; font-family: NanumBarunGothicBold">다른 키워드를 입력해주세요</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div>
+        <div class="vw-container"  ng-hide="!(getSentimentBar && getWordCount && getChart && dataExist)">
+            <div class="vw-container-header">
+            </div>
+            <div class="vw-container-search-info">
+                <div class="outer">
+                    <div class="inner">
+                        <div class="centered">
+                            <div class="" ng-hide="erroralert">
+                                <h2 style="color:#F5A54A; font-family: NanumBarunGothicBold">
+                                    <small style="color:#72848B; font-family: NanumBarunGothic">총 {{model.sentiment.totalCount}}개의 글의</small>
+                                    <br>"{{keyword}}"에 대한 감성분석 결과입니다.
+                                </h2>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="">
+                <div class="vw-container-sentimentBar">
+                    <h4 style="font-family: NanumBarunGothicBold;"><span class="glyphicon glyphicon-ok"></span> 감성분석결과</h4>
+
+                    <div class="progress progress-striped">
+                        <div class="progress-bar progress-bar-positive progress-bar-striped" role="progressbar"
+                             aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"
+                             style="width: {{model.sentiment.positive}}%;">
+                            <span>{{model.sentiment.positive}}%</span>
+                        </div>
+                        <div class="progress-bar progress-bar-negative progress-bar-striped" role="progressbar"
+                             aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"
+                             style="width: {{model.sentiment.negative}}%;">
+                            <span>{{model.sentiment.negative}}%</span>
+                        </div>
+                        <div class="progress-bar progress-bar-neutral progress-bar-striped" role="progressbar"
+                             aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"
+                             style="width: {{model.sentiment.neutral}}%;">
+                            <span>{{model.sentiment.neutral}}%</span>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="vw-container-analysis">
+                    <div class="vw-container-analysis-chart">
+                        <h4 style="font-family: NanumBarunGothicBold;"><span class="glyphicon glyphicon-stats"></span> 일주일 분포</h4>
+                        <!--<canvas id="bar" class="chart chart-bar" chart-data="data" chart-labels="labels"-->
+                        <!--chart-series="series" chart-options="options" width="601" height="300"></canvas>-->
+                        <div id="sentiment"></div>
+                    </div>
+
+                    <div class="vw-container-analysis-word">
+                        <h4 style="font-family: NanumBarunGothicBold;"><span class="glyphicon glyphicon-menu-hamburger"></span> 단어</h4>
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th>단어</th>
+                                <th>횟수</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr ng-repeat="word in model.word">
+                                <td>{{word.word}}</td>
+                                <td>{{word.count}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="vw-container-sns">
+                    <h4 style="font-family: NanumBarunGothicBold;"><span class="glyphicon glyphicon-search"></span> 게시글</h4>
+
+                    <ul class="nav nav-pills">
+                        <li class="active">
+                            <a ng-click="selectCategory()" data-toggle="pill" href="#home">전체
+                                <small style="color:#72848B;">{{model.sentiment.totalCount}}</small>
+                            </a>
+                        </li>
+                        <li>
+                            <a ng-click="selectCategory('긍정')" data-toggle="pill" href="#pos">긍정
+                                <small style="color:#72848B;">{{model.sentiment.positiveCount}}</small>
+                            </a>
+                        </li>
+                        <li>
+                            <a ng-click="selectCategory('부정')" data-toggle="pill" href="#neg">부정
+                                <small style="color:#72848B;">{{model.sentiment.negativeCount}}</small>
+                            </a>
+                        </li>
+                        <li>
+                            <a ng-click="selectCategory('중립')" data-toggle="pill" href="#neu">중립
+                                <small style="color:#72848B;">{{model.sentiment.neutralCount}}</small>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div id="home" class="tab-pane fade in active">
+                            <ul class="list-group">
+                                <li ng-repeat="article in model.sentiment.text | filter:categoryFilterFn | range:articleSize"
+                                    class="list-group-item">
+                                <span style="color:#F17233">{{article.name}}
+                                  <small style="color:#72848B">@{{article.scrName}}</small>
+                                    <small style="color:#C6C6C6; padding-left:1em;">{{article.date}}</small>
+                                </span>
+                                    <br>
+                                    <a style="color:#000000;" href="{{article.URL}}">{{article.Text}}</a>
+                                </li>
+                                <a href="" ng-show="ShowMoreButton()" ng-click="clickCategory()"
+                                   class="list-group-item list-group-item-warning" style="text-align: center;">더보기</a>
+                            </ul>
+                        </div>
+                        <div id="pos" class="tab-pane fade">
+                            <ul class="list-group">
+                                <li ng-repeat="article in model.sentiment.text | filter:categoryFilterFn | range:articleSize"
+                                    class="list-group-item">
+                        <span style="color:#F17233">{{article.name}}
+                            <small style="color:#72848B">@{{article.scrName}}</small>
+                            <small style="color:#C6C6C6; padding-left:1em;">{{article.date}}</small></span>
+                                    <br>
+                                    <a style="color:#000000;" href="{{article.URL}}">{{article.Text}}</a>
+                                </li>
+                                <a href="" ng-show="ShowMoreButton()" ng-click="clickCategory()"
+                                   class="list-group-item list-group-item-warning" style="text-align: center;">더보기</a>
+                            </ul>
+                        </div>
+                        <div id="neu" class="tab-pane fade">
+                            <ul class="list-group">
+                                <li ng-repeat="article in model.sentiment.text | filter:categoryFilterFn | range:articleSize"
+                                    class="list-group-item">
+                        <span style="color:#F17233">{{article.name}}
+                            <small style="color:#72848B">@{{article.scrName}}</small>
+                            <small style="color:#C6C6C6; padding-left:1em;">{{article.date}}</small></span>
+                                    <br>
+                                    <a style="color:#000000;" href="{{article.URL}}">{{article.Text}}</a>
+                                </li>
+                                <a href="" ng-show="ShowMoreButton()" ng-click="clickCategory()"
+                                   class="list-group-item list-group-item-warning" style="text-align: center;">더보기</a>
+                            </ul>
+                        </div>
+                        <div id="neg" class="tab-pane fade">
+                            <ul class="list-group">
+                                <li ng-repeat="article in model.sentiment.text | filter:categoryFilterFn | range:articleSize"
+                                    class="list-group-item">
+                        <span style="color:#F17233">{{article.name}}
+                            <small style="color:#72848B">@{{article.scrName}}</small>
+                            <small style="color:#C6C6C6; padding-left:1em;">{{article.date}}</small></span>
+                                    <br>
+                                    <a style="color:#000000;" href="{{article.URL}}">{{article.Text}}</a>
+                                </li>
+                                <a href="" ng-show="ShowMoreButton()" ng-click="clickCategory()"
+                                   class="list-group-item list-group-item-warning" style="text-align: center;">더보기</a>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    keyword = "<%= key%>"
+    var sentimeter = angular.module("sentimeter", ['angular-spinkit']);
+    //    var options = {
+    //        'legend': {
+    //            hrefs: []
+    //        },
+    //        'dataset': {
+    //            title: 'Playing time per day',
+    //            colorset: ['#82DCF8', '#C6C6C6', "#FE9289"],
+    //        },
+    //        'chartDiv': 'chart18',
+    //        'chartType': 'multi_column',
+    //        'chartSize': {width: 640, height: 320}
+    //    };
+
+    sentimeter.constant("articleListPageCount", 7);
+
+    sentimeter.filter("range", function ($filter) {
+        return function (data, size) {
+            if (angular.isArray(data) && angular.isNumber(size)) {
+                var start_index = 0;
+                if (data.length < start_index) {
+                    return [];
+                } else {
+                    return $filter("limitTo")(data.splice(start_index), size);
+                }
+            } else {
+                return data;
+            }
+        }
+    });
+
+    sentimeter.controller("view", function ($scope, $http, $filter, $window) {
+        var selectedCategory = null;
+        $scope.options = {
+            'legend': {
+                names: [],
+                hrefs: []
+            },
+            'dataset': {
+                title: '날짜별 감성 분석',
+                values: [],
+                colorset: ['#82DCF8', "#FE9289", '#C6C6C6'],
+                fields: []
+            },
+            'chartDiv': 'sentiment',
+            'chartType': 'multi_column',
+            'chartSize': {width: 600, height: 300},
+            'increment': 0,
+            'maxValue' : 0
+        };
+        $scope.model = {};
+
+        $scope.keyword = keyword;
+
+        $scope.dataExist = false;
+        $scope.erroralert = false;
+        $scope.getSentimentBar = false;
+        $scope.getChart = false;
+        $scope.getWordCount = false;
+        $scope.getSearch = false;
+
+        $scope.articleSize = 7;
+        $scope.height = document.body.cilentHeight;
+
+
+        $http.get("/result/sentimentBar?keyword=" + keyword).success(function (data) {
+            $scope.model.sentiment = data;
+            if (data.totalCount != 0) {
+                $scope.dataExist = true;
+            }
+            else {
+                $scope.model.sentiment.totalCount = 0;
+                $scope.erroralert = true;
+            }
+            $scope.getSentimentBar = true;
+        });
+        $http.get("/result/chart?keyword=" + keyword).success(function (data) {
+            console.log(data);
+            $scope.getChart = true;
+            $scope.options.legend.names = data.names;
+            $scope.options.dataset.values = data.dataset;
+            $scope.options.dataset.fields = data.fields;
+            $scope.options.increment = Math.ceil(data.max / 12);
+            $scope.options.maxValue = (data.max>=7 ? data.max : 6);
+            Nwagon.chart($scope.options);
+
+
+        });
+        $http.get("/result/wordCount?keyword=" + keyword).success(function (data) {
+            $scope.model.word = $filter("limitTo")(data.splice(0), 7);
+            $scope.getWordCount = true;
+        });
+        $http.get("/result/search").success(function (data) {
+            $scope.model.search = $filter("limitTo")(data.splice(0), 10);
+            $scope.getSearch = true;
+        });
+
+        $scope.$on('angular-spinkit:imageLoaded');
+
+        $scope.toggle = function () {
+            console.log("눌림");
+            var key = $scope.input;
+            if(key.length < 2) {
+                $window.alert("두글자 이상 입력하세요");
+                return;
+            }
+            location.href = "/view?keyword=" + key;
+        };
+
+        $scope.categoryFilterFn = function (article) {
+            return selectedCategory == null || article.sentiment == selectedCategory;
+        };
+
+        $scope.selectCategory = function (newCategory) {
+            selectedCategory = newCategory;
+            $scope.articleSize = 7;
+        };
+
+        $scope.clickCategory = function () {
+            $scope.articleSize += 7;
+        }
+
+        $scope.ShowMoreButton = function () {
+            if ($scope.model.sentiment === undefined) {
+                return;
+            }
+
+            if (selectedCategory == '긍정') {
+                return $scope.articleSize < $scope.model.sentiment.positiveCount;
+            }
+            else if (selectedCategory == '중립') {
+                return $scope.articleSize < $scope.model.sentiment.neutralCount;
+            }
+            else if (selectedCategory == '부정') {
+                return $scope.articleSize < $scope.model.sentiment.negativeCount;
+            }
+            else {
+                return $scope.articleSize < $scope.model.sentiment.totalCount;
+            }
+        }
+
+    });
+
+</script>
+</body>
+</html>

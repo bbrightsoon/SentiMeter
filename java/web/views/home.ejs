@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
+    <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="stylesheets/style.css">
+    <script src="bower_components/angular/angular.min.js"></script>
+
+</head>
+<body ng-cloak ng-app="home" ng-controller="home">
+
+<div id="header">
+</div>
+<div id="container">
+    <div class="outer">
+        <div class="inner">
+            <div class="centered">
+                <div class="searchBox" style="padding-bottom: 150px">
+                    <div class="hm-container-logo">
+                        <img src="image/logo.png" width="500">
+                    </div>
+                    <div class="hm-container-search" style="width:500px">
+                        <div class="input-group">
+                            <input class="hmSearchInput" type="text" class="form-control" placeholder="키워드로 감성을 확인해보세요!"
+                                   ng-model="keyword"
+                                   ng-keydown="$event.keyCode == 13 && toggle()">
+                            <div class="input-group-btn" style="width:50px; height:50px; margin-bottom: 10px">
+                                <button class="btn searchBtn" ng-click="toggle()" type="submit">
+                                    <i style="color:#FFFFFF;" class="glyphicon glyphicon-search"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: left">
+                        <h4 style="color:#72848B; font-family: NanumBarunGothicBold">많이 검색한 키워드:
+                            <small ng-repeat="keyword in model.search" ng-show="getSearch">
+                                <a href="/view?keyword={{keyword._id}}"
+                                   style="font-size:12px; padding-left:1em; color:#696969; font-family:NanumBarunGothic;">{{keyword._id}}</a>
+                            </small>
+                            <small style="font-size:12px; padding-left:1em; color:#C6C6C6; font-family:NanumBarunGothic;" ng-hide="getSearch">
+                                많이 검색한 키워드를 불러오는 중입니다</a>
+                            </small>
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    var app = angular.module("home", []);
+    app.controller('home', function($scope, $http, $filter, $window) {
+        $scope.model = {};
+        $scope.getSearch = false;
+
+        $http.get("/result/search").success(function (data){
+            $scope.model.search = $filter("limitTo")(data.splice(0), 6);
+            $scope.getSearch = true;
+        });
+
+        $scope.toggle = function() {
+            var key = $scope.keyword;
+            if(key.length < 2) {
+                $window.alert("두글자 이상 입력하세요");
+                return;
+            }
+            location.href = "/view?keyword=" + key;
+        }
+
+    })
+</script>
+
+</body>
+</html>
